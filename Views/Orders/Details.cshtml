@@ -1,0 +1,43 @@
+﻿@model GerenciamentoDePedidos.Application.DTOs.OrderDto
+@{
+    ViewData["Title"] = "Detalhes do Pedido";
+}
+
+<div class="container my-5">
+    <div class="card shadow-lg rounded-3">
+        <div class="card-header bg-info text-white">
+            <h4 class="mb-0">Detalhes do Pedido #@Model.Id</h4>
+        </div>
+        <div class="card-body">
+            <p><strong>Cliente:</strong> @Model.CustomerName</p>
+            <p><strong>Data:</strong> @Model.OrderDate.ToString("dd/MM/yyyy")</p>
+            <p><strong>Status:</strong> <span class="badge bg-primary">@Model.Status</span></p>
+            <p><strong>Total:</strong> R$ @Model.TotalAmount.ToString("N2")</p>
+
+            <h5 class="mt-4">Itens do Pedido</h5>
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Produto</th>
+                        <th>Qtd</th>
+                        <th>Preço Unitário</th>
+                        <th>Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Items)
+                    {
+                        <tr>
+                            <td>@item.ProductName</td>
+                            <td>@item.Quantity</td>
+                            <td>R$ @item.UnitPrice.ToString("N2")</td>
+                            <td>R$ @((item.Quantity * item.UnitPrice).ToString("N2"))</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            <a asp-action="Index" class="btn btn-secondary mt-3">Voltar</a>
+        </div>
+    </div>
+</div>

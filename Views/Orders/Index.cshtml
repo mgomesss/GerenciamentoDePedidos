@@ -1,0 +1,136 @@
+﻿@model IEnumerable<GerenciamentoDePedidos.Application.DTOs.OrderDto>
+@{
+    ViewData["Title"] = "Pedidos";
+}
+
+<div class="container my-5">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card shadow-lg rounded-3">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Pedidos</h4>
+            <a class="btn btn-light btn-sm" asp-action="Create">
+                <i class="bi bi-plus-circle"></i> Novo Pedido
+            </a>
+        </div>
+        <div class="card-body">
+            <div class="row g-2 mb-4">
+                <div class="col-md-4">
+                    <input type="text" id="searchCustomer" class="form-control" placeholder="Buscar por cliente..." value="@ViewBag.SearchCustomer" />
+                </div>
+                <div class="col-md-3">
+                    <select id="status" class="form-select">
+                        <option value="">-- Status --</option>
+                        <option value="Novo">Novo</option>
+                        <option value="Processando">Processando</option>
+                        <option value="Finalizado">Finalizado</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="button" id="filter-orders" class="btn btn-primary">
+                        <i class="bi bi-search"></i> Buscar
+                    </button>
+                    <button type="button" id="clear-filter" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Limpar
+                    </button>
+                </div>
+            </div>
+
+            <table class="table table-hover align-middle" id="orders-table">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Cliente</th>
+                        <th>Data</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        <th class="text-end">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var order in Model)
+                    {
+                        <tr>
+                            <td>@order.Id</td>
+                            <td>@order.CustomerName</td>
+                            <td>@order.OrderDate.ToString("dd/MM/yyyy")</td>
+                            <td>R$ @order.TotalAmount.ToString("N2")</td>
+                            <td><span class="badge bg-info">@order.Status</span></td>
+                            <td class="text-end">
+                                <a class="btn btn-sm btn-outline-primary" asp-action="Details" asp-route-id="@order.Id">
+                                    <i class="bi bi-eye"></i> Detalhes
+                                </a>
+                                <a class="btn btn-sm btn-outline-warning" asp-action="EditStatus" asp-route-id="@order.Id">
+                                    <i class="bi bi-pencil-square"></i> Status
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Aplicar filtro dinâmico
+            $("#filter-orders").click(function () {
+                var searchCustomer = $("#searchCustomer").val();
+                var status = $("#status").val();
+
+                $.ajax({
+                    url: '@Url.Action("Index", "Orders")',
+                    type: 'GET',
+                    data: { searchCustomer: searchCustomer, status: status },
+                    success: function (data) {
+                        // Extrair a tabela do HTML retornado
+                        var newTableBody = $(data).find('#orders-table tbody').html();
+                        $('#orders-table tbody').html(newTableBody);
+                    },
+                    error: function () {
+                        alert("Erro ao filtrar pedidos. Tente novamente.");
+                    }
+                });
+            });
+
+            // Limpar filtro
+            $("#clear-filter").click(function () {
+                $("#searchCustomer").val('');
+                $("#status").val('');
+                $.ajax({
+                    url: '@Url.Action("Index", "Orders")',
+                    type: 'GET',
+                    success: function (data) {
+                        var newTableBody = $(data).find('#orders-table tbody').html();
+                        $('#orders-table tbody').html(newTableBody);
+                    },
+                    error: function () {
+                        alert("Erro ao limpar filtros. Tente novamente.");
+                    }
+                });
+            });
+
+            // Aplicar valor inicial do status, se houver
+            var currentStatus = '@ViewBag.Status';
+            if (currentStatus) {
+                $("#status").val(currentStatus);
+            }
+        });
+    </script>
+}

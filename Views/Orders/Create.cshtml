@@ -1,0 +1,151 @@
+﻿@model GerenciamentoDePedidos.Application.DTOs.OrderCreateDto
+@{
+    ViewData["Title"] = "Novo Pedido";
+}
+
+<div class="container my-5">
+    <div class="card shadow-lg rounded-3">
+        <div class="card-header bg-success text-white">
+            <h4 class="mb-0">Novo Pedido</h4>
+        </div>
+        <div class="card-body">
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                    {
+                        <p>@error.ErrorMessage</p>
+                    }
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            <form asp-action="Create" method="post" id="create-order-form">
+                <div class="mb-3">
+                    <label class="form-label">Cliente</label>
+                    <select asp-for="CustomerId" class="form-select" asp-items="@ViewBag.Customers">
+                        <option value="">Selecione um cliente</option>
+                    </select>
+                    <span asp-validation-for="CustomerId" class="text-danger"></span>
+                </div>
+
+                <div id="products-container">
+                    <div class="row g-2 align-items-end mb-3 product-item">
+                        <div class="col-md-6">
+                            <label class="form-label">Produto</label>
+                            <select name="Products[0].ProductId" class="form-select product-select" asp-items="@ViewBag.Products">
+                                <option value="">Selecione um produto</option>
+                            </select>
+                            <span class="text-danger" data-valmsg-for="Products[0].ProductId"></span>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Quantidade</label>
+                            <input type="number" name="Products[0].Quantity" class="form-control product-quantity" min="1" value="1" />
+                            <span class="text-danger" data-valmsg-for="Products[0].Quantity"></span>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="button" class="btn btn-danger remove-product">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" id="add-product" class="btn btn-outline-success mb-3">
+                    <i class="bi bi-plus-circle"></i> Adicionar Produto
+                </button>
+
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-success me-2">Salvar</button>
+                    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.12/jquery.validate.unobtrusive.min.js"></script>
+    <script>
+        let productIndex = 1;
+
+        // Adicionar novo produto dinamicamente
+        $("#add-product").click(function () {
+            const html = `
+            <div class="row g-2 align-items-end mb-3 product-item">
+                <div class="col-md-6">
+                    <label class="form-label">Produto</label>
+                    <select name="Products[${productIndex}].ProductId" class="form-select product-select">
+                        <option value="">Selecione um produto</option>
+                        @Html.Raw(string.Join("", ((SelectList)ViewBag.Products).Select(p => $"<option value='{p.Value}'>{p.Text}</option>")))
+                    </select>
+                    <span class="text-danger" data-valmsg-for="Products[${productIndex}].ProductId"></span>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Quantidade</label>
+                    <input type="number" name="Products[${productIndex}].Quantity" class="form-control product-quantity" min="1" value="1" />
+                    <span class="text-danger" data-valmsg-for="Products[${productIndex}].Quantity"></span>
+                </div>
+                <div class="col-md-3">
+                    <button type="button" class="btn btn-danger remove-product">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>`;
+            $("#products-container").append(html);
+
+            // Reaplicar validação para novos campos
+            $("select[name='Products[" + productIndex + "].ProductId']").rules("add", {
+                required: true,
+                messages: { required: "Selecione um produto." }
+            });
+            $("input[name='Products[" + productIndex + "].Quantity']").rules("add", {
+                required: true,
+                min: 1,
+                messages: {
+                    required: "Insira uma quantidade.",
+                    min: "A quantidade deve ser maior que 0."
+                }
+            });
+            productIndex++;
+        });
+
+        // Remover produto
+        $(document).on("click", ".remove-product", function () {
+            if ($(".product-item").length > 1) {
+                $(this).closest(".product-item").remove();
+            }
+        });
+
+        // Validação do formulário
+        $("#create-order-form").validate({
+            rules: {
+                CustomerId: {
+                    required: true
+                },
+                "Products[0].ProductId": {
+                    required: true
+                },
+                "Products[0].Quantity": {
+                    required: true,
+                    min: 1
+                }
+            },
+            messages: {
+                CustomerId: "Por favor, selecione um cliente.",
+                "Products[0].ProductId": "Por favor, selecione pelo menos um produto.",
+                "Products[0].Quantity": "Por favor, insira uma quantidade válida (mínimo 1)."
+            },
+            submitHandler: function (form) {
+                // Renomear índices para garantir continuidade
+                $(".product-item").each(function (index) {
+                    $(this).find(".product-select").attr("name", `Products[${index}].ProductId`);
+                    $(this).find(".product-quantity").attr("name", `Products[${index}].Quantity`);
+                });
+                form.submit();
+            }
+        });
+    </script>
+}
